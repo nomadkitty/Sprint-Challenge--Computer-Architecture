@@ -169,12 +169,16 @@ class CPU:
         address = self.reg[reg]
         if self.fl == 0b00000001:
             self.pc = address
+        else:
+            self.pc += 2
 
     def handle_JNE(self):
         reg = self.ram_read(self.pc + 1)
         address = self.reg[reg]
         if self.fl != 0b00000001:
             self.pc = address
+        else:
+            self.pc += 2
 
     def trace(self):
         """
