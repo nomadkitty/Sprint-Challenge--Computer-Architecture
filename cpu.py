@@ -15,6 +15,13 @@ CMP = 0b10100111
 JMP = 0b01010100
 JEQ = 0b01010101
 JNE = 0b01010110
+AND = 0b10101000
+OR = 0b10101010
+XOR = 0b10101011
+NOT = 0b01101001
+SHL = 0b10101100
+SHR = 0b10101101
+MOD = 0b10100100
 
 
 class CPU:
@@ -43,6 +50,13 @@ class CPU:
         self.branchtable[JMP] = self.handle_JMP
         self.branchtable[JEQ] = self.handle_JEQ
         self.branchtable[JNE] = self.handle_JNE
+        self.branchtable[AND] = self.handle_AND
+        self.branchtable[OR] = self.handle_OR
+        self.branchtable[XOR] = self.handle_XOR
+        self.branchtable[NOT] = self.handle_NOT
+        self.branchtable[SHL] = self.handle_SHL
+        self.branchtable[SHR] = self.handle_SHR
+        self.branchtable[MOD] = self.handle_MOD
 
     def ram_read(self, mar):  # accept Memory Address Register (MAR)
         return self.ram[mar]
@@ -83,22 +97,37 @@ class CPU:
                 self.fl = 0b00000010
             if self.reg[reg_a] < self.reg[reg_b]:
                 self.fl = 0b00000100
-
+        elif op == "AND":
+            result = self.reg[reg_a] & self.reg[reg_b]
+            self.reg[reg_a] = result
+        elif op == "OR":
+            result = self.reg[reg_a] | self.reg[reg_b]
+            self.reg[reg_a] = result
+        elif op == "XOR":
+            result = self.reg[reg_a] ^ self.reg[reg_b]
+            self.reg[reg_a] = result
+        elif op == "NOT":
+            self.reg[reg_a] = ~self.reg[reg_a]
+        elif op == "SHL":
+            result = self.reg[reg_a] << self.reg[reg_b]
+            self.reg[reg_a] = result
+        elif op == "SHR":
+            result = self.reg[reg_a] >> self.reg[reg_b]
+            self.reg[reg_a] = result
+        elif op == "MOD":
+            if self.reg[reg_b] == 0:
+                print("Error: cannot divide by 0")
+                self.handle_HLT()
+            else:
+                result = self.reg[reg_a] % self.reg[reg_b]
+                self.reg[reg_a] = result
         else:
             raise Exception("Unsupported ALU operation")
 
     def handle_HLT(self):
         self.running = False
 
-    def handle_LDI(self):
-        operand_a = self.ram_read(self.pc + 1)
-        operand_b = self.ram_read(self.pc + 2)
-        self.reg[operand_a] = operand_b
-
-    def handle_PRN(self):
-        reg_num = self.ram_read(self.pc + 1)
-        print(self.reg[reg_num])
-
+    # all alu operations
     def handle_ADD(self):
         operand_a = self.ram_read(self.pc + 1)
         operand_b = self.ram_read(self.pc + 2)
@@ -108,6 +137,49 @@ class CPU:
         operand_a = self.ram_read(self.pc + 1)
         operand_b = self.ram_read(self.pc + 2)
         self.alu("MUL", operand_a, operand_b)
+
+    def handle_CMP(self):
+        operand_a = self.ram_read(self.pc + 1)
+        operand_b = self.ram_read(self.pc + 2)
+        self.alu("CMP", operand_a, operand_b)
+
+    def handle_AND(self):
+        operand_a = self.ram_read(self.pc + 1)
+        operand_b = self.ram_read(self.pc + 2)
+        self.alu("AND", operand_a, operand_b)
+
+    def handle_OR(self):
+        operand_a = self.ram_read(self.pc + 1)
+        operand_b = self.ram_read(self.pc + 2)
+        self.alu("OR", operand_a, operand_b)
+
+    def handle_XOR(self):
+        operand_a = self.ram_read(self.pc + 1)
+        operand_b = self.ram_read(self.pc + 2)
+        self.alu("XOR", operand_a, operand_b)
+
+    def handle_NOT(self):
+        operand_a = self.ram_read(self.pc + 1)
+        self.alu("NOT", operand_a, None)
+
+    def handle_SHL(self):
+        operand_a = self.ram_read(self.pc + 1)
+        operand_b = self.ram_read(self.pc + 2)
+        self.alu("SHL", operand_a, operand_b)
+
+    def handle_SHR(self):
+        operand_a = self.ram_read(self.pc + 1)
+        operand_b = self.ram_read(self.pc + 2)
+        self.alu("SHR", operand_a, operand_b)
+
+    def handle_LDI(self):
+        operand_a = self.ram_read(self.pc + 1)
+        operand_b = self.ram_read(self.pc + 2)
+        self.reg[operand_a] = operand_b
+
+    def handle_PRN(self):
+        reg_num = self.ram_read(self.pc + 1)
+        print(self.reg[reg_num])
 
     def handle_PUSH(self):
         # decrement the stack pointer
@@ -153,11 +225,6 @@ class CPU:
         self.reg[7] += 1
         # go the return address: set the pc to return address
         self.pc = return_address
-
-    def handle_CMP(self):
-        operand_a = self.ram_read(self.pc + 1)
-        operand_b = self.ram_read(self.pc + 2)
-        self.alu("CMP", operand_a, operand_b)
 
     def handle_JMP(self):
         reg = self.ram_read(self.pc + 1)
