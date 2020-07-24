@@ -12,6 +12,7 @@ POP = 0b01000110
 CALL = 0b01010000
 RET = 0b00010001
 CMP = 0b10100111
+JMP = 0b01010100
 
 
 class CPU:
@@ -37,6 +38,7 @@ class CPU:
         self.branchtable[CALL] = self.handle_CALL
         self.branchtable[RET] = self.handle_RET
         self.branchtable[CMP] = self.handle_CMP
+        self.branchtable[JMP] = self.handle_JMP
 
     def ram_read(self, mar):  # accept Memory Address Register (MAR)
         return self.ram[mar]
@@ -153,6 +155,11 @@ class CPU:
         operand_b = self.ram_read(self.pc + 2)
         self.alu("CMP", operand_a, operand_b)
 
+    def handle_JMP(self):
+        reg = self.ram_read(self.pc + 1)
+        address = self.reg[reg]
+        self.pc = address
+
     def trace(self):
         """
         Handy function to print out the CPU state. You might want to call this
@@ -183,5 +190,5 @@ class CPU:
             if ir == 0 or None:
                 print(f"Unknown Instruction: {ir}")
                 sys.exit()
-            if ir != CALL and ir != RET:
+            if ir != CALL and ir != RET and ir != JMP:
                 self.pc += ir_length
